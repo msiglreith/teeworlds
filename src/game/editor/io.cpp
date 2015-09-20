@@ -175,6 +175,30 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 					LayerCount++;
 				}
 			}
+			else if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_SOUNDS)
+			{
+				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving sounds layer");
+				CLayerSounds *pLayer = (CLayerSounds *)pGroup->m_lLayers[l];
+				if(pLayer->m_lSources.size())
+				{
+					CMapItemLayerSounds Item;
+					Item.m_Version = CMapItemLayerQuads::CURRENT_VERSION;
+					Item.m_Layer.m_Flags = pLayer->m_Flags;
+					Item.m_Layer.m_Type = pLayer->m_Type;
+
+					// add the data
+					Item.m_NumSources = pLayer->m_lSources.size();
+					Item.m_Data = df.AddDataSwapped(pLayer->m_lSources.size()*sizeof(CAudioSource), pLayer->m_lSources.base_ptr());
+
+					// save layer name
+					StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pLayer->m_aName);
+
+					df.AddItem(MAPITEMTYPE_LAYER, LayerCount, sizeof(Item), &Item);
+
+					GItem.m_NumLayers++;
+					LayerCount++;
+				}
+			}
 		}
 
 		df.AddItem(MAPITEMTYPE_GROUP, GroupCount++, sizeof(GItem), &GItem);
@@ -427,6 +451,19 @@ int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int Storag
 						pQuads->m_lQuads.set_size(pQuadsItem->m_NumQuads);
 						mem_copy(pQuads->m_lQuads.base_ptr(), pData, sizeof(CQuad)*pQuadsItem->m_NumQuads);
 						DataFile.UnloadData(pQuadsItem->m_Data);
+					}
+					else if(pLayerItem->m_Type == LAYERTYPE_SOUNDS)
+					{
+						CMapItemLayerSounds *pSoundsItem = (CMapItemLayerSounds *)pLayerItem;
+						CLayerSounds *pSounds = new CLayerSounds;
+						pSounds->m_pEditor = m_pEditor;
+						pLayer = pSounds;
+
+						void *pData = DataFile.GetDataSwapped(pSoundsItem->m_Data);
+						pGroup->AddLayer(pSounds);
+						pSounds->m_lSources.set_size(pSoundsItem->m_NumSources);
+						mem_copy(pSounds->m_lSources.base_ptr(), pData, sizeof(CAudioSource)*pSoundsItem->m_NumSources);
+						DataFile.UnloadData(pSoundsItem->m_Data);
 					}
 
 					if(pLayer)

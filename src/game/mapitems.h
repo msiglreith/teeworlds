@@ -10,6 +10,7 @@ enum
 	LAYERTYPE_GAME,
 	LAYERTYPE_TILES,
 	LAYERTYPE_QUADS,
+	LAYERTYPE_SOUNDS,
 
 	MAPITEMTYPE_VERSION=0,
 	MAPITEMTYPE_INFO,
@@ -18,7 +19,7 @@ enum
 	MAPITEMTYPE_GROUP,
 	MAPITEMTYPE_LAYER,
 	MAPITEMTYPE_ENVPOINTS,
-
+	MAPITEMTYPE_SOUND,
 
 	CURVETYPE_STEP=0,
 	CURVETYPE_LINEAR,
@@ -89,6 +90,13 @@ public:
 	unsigned char m_Flags;
 	unsigned char m_Skip;
 	unsigned char m_Reserved;
+};
+
+class CAudioSource
+{
+public:
+	CPoint m_Position;
+	int m_FalloffDist;
 };
 
 struct CMapItemInfo
@@ -181,6 +189,20 @@ struct CMapItemLayerQuads
 	int m_NumQuads;
 	int m_Data;
 	int m_Image;
+
+	int m_aName[3];
+} ;
+
+struct CMapItemLayerSounds
+{
+	enum { CURRENT_VERSION=1 };
+
+	CMapItemLayer m_Layer;
+	int m_Version;
+
+	int m_NumSources;
+	int m_Data;
+	int m_Sample;
 
 	int m_aName[3];
 } ;

@@ -1029,7 +1029,6 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		static int s_NewButton = 0;
 
 		CLayerQuads *pQLayer = (CLayerQuads *)GetSelectedLayerType(0, LAYERTYPE_QUADS);
-		//CLayerTiles *tlayer = (CLayerTiles *)get_selected_layer_type(0, LAYERTYPE_TILES);
 		if(DoButton_Editor(&s_NewButton, "Add Quad", pQLayer?0:-1, &Button, 0, "Adds a new quad"))
 		{
 			if(pQLayer)
@@ -1050,6 +1049,31 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		}
 	}
 
+	// sounds manipulation
+	{
+		// do add button
+		TB_Top.VSplitLeft(10.0f, &Button, &TB_Top);
+		TB_Top.VSplitLeft(60.0f, &Button, &TB_Top);
+		static int s_NewButton = 0;
+
+		CLayerSounds *pSoundLayer = (CLayerSounds *)GetSelectedLayerType(0, LAYERTYPE_SOUNDS);
+		if(DoButton_Editor(&s_NewButton, "Add Source", pSoundLayer?0:-1, &Button, 0, "Adds a new audio source"))
+		{
+			if(pSoundLayer)
+			{
+				float Mapping[4];
+				CLayerGroup *g = GetSelectedGroup();
+				g->Mapping(Mapping);
+				int AddX = f2fx(Mapping[0] + (Mapping[2]-Mapping[0])/2);
+				int AddY = f2fx(Mapping[1] + (Mapping[3]-Mapping[1])/2);
+
+				CAudioSource *pSource = pSoundLayer->NewSource();
+				pSource->m_Position.x += AddX;
+				pSource->m_Position.y += AddY;
+			}
+		}
+	}
+
 	// tile manipulation
 	{
 		TB_Bottom.VSplitLeft(40.0f, &Button, &TB_Bottom);
@@ -1062,6 +1086,8 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 				DoMapBorder();
 		}
 	}
+
+
 
 	TB_Bottom.VSplitLeft(5.0f, 0, &TB_Bottom);
 
@@ -2517,7 +2543,7 @@ void CEditor::RenderLayers(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 
 					static int s_GroupPopupId = 0;
 					if(Result == 2)
-						UiInvokePopupMenu(&s_GroupPopupId, 0, UI()->MouseX(), UI()->MouseY(), 145, 220, PopupGroup);
+						UiInvokePopupMenu(&s_GroupPopupId, 0, UI()->MouseX(), UI()->MouseY(), 145, 240, PopupGroup);
 
 					if(m_Map.m_lGroups[g]->m_lLayers.size() && Input()->MouseDoubleClick())
 						m_Map.m_lGroups[g]->m_Collapse ^= 1;

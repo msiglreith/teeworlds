@@ -497,6 +497,20 @@ public:
 	virtual int RenderProperties(CUIRect *pToolbox);
 };
 
+class CLayerSounds : public CLayer
+{
+public:
+	CLayerSounds();
+	~CLayerSounds();
+
+	virtual void Render();
+	CAudioSource *NewSource();
+
+	virtual int RenderProperties(CUIRect *pToolbox);
+
+	array<CAudioSource> m_lSources;
+};
+
 class CEditor : public IEditor
 {
 	class IInput *m_pInput;
