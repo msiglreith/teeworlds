@@ -786,6 +786,18 @@ CQuad *CEditor::GetSelectedQuad()
 	return 0;
 }
 
+CAudioSource *CEditor::GetSelectedAudioSource()
+{
+	CLayerSounds *pLayer = (CLayerSounds *)GetSelectedLayerType(0, LAYERTYPE_SOUNDS);
+	if(!pLayer)
+		return 0x0;
+
+	if(m_SelectedSource >= 0 && m_SelectedSource < pLayer->m_lSources.size())
+		return &pLayer->m_lSources[m_SelectedSource];
+	
+	return 0x0;
+}
+
 void CEditor::CallbackOpenMap(const char *pFileName, int StorageType, void *pUser)
 {
 	CEditor *pEditor = (CEditor*)pUser;

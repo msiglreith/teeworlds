@@ -20,7 +20,7 @@ void CLayerSounds::Render()
 	Graphics()->QuadsBegin();
 
 	// render falloff distance circle
-	Graphics()->SetColor(0.5f, 0.75f, 1.0f, 0.4f);
+	Graphics()->SetColor(0.2f, 0.3f, 0.4f, 0.4f);
 	for(int i = 0; i < m_lSources.size(); i++)
 	{
 		CAudioSource *pSource = &m_lSources[i];

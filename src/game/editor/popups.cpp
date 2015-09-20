@@ -1047,7 +1047,49 @@ bool CEditor::PopupAutoMapProceedOrder()
 
 int CEditor::PopupAudioSource(CEditor *pEditor, CUIRect View)
 {
-	// TODO:
+	CAudioSource *pSource = pEditor->GetSelectedAudioSource();
+
+	// delete button
+	CUIRect Button;
+	View.HSplitBottom(12.0f, &View, &Button);
+	static int s_DeleteButton = 0;
+	if(pEditor->DoButton_Editor(&s_DeleteButton, "Delete", 0, &Button, 0, "Deletes the current audio source"))
+	{
+		CLayerSounds *pLayer = (CLayerSounds *)pEditor->GetSelectedLayerType(0, LAYERTYPE_SOUNDS);
+		if(pLayer)
+		{
+			pEditor->m_Map.m_Modified = true;
+			pLayer->m_lSources.remove_index(pEditor->m_SelectedSource);
+			pEditor->m_SelectedSource--;
+		}
+		return 1;
+	}
+
+	// properties
+	enum
+	{
+		PROP_POS_X=0,
+		PROP_POS_Y,
+		PROP_FALLOFF,
+		NUM_PROPS,
+	};
+
+	CProperty aProps[] = {
+		{"Pos X", fx2i(pSource->m_Position.x), PROPTYPE_INT_SCROLL, -1000000, 1000000},
+		{"Pos Y", fx2i(pSource->m_Position.y), PROPTYPE_INT_SCROLL, -1000000, 1000000},
+		{"Falloff", pSource->m_FalloffDist, PROPTYPE_INT_SCROLL, 0, 1000000},
+		{0},
+	};
+
+	static int s_aIds[NUM_PROPS] = {0};
+	int NewVal = 0;
+	int Prop = pEditor->DoProperties(&View, aProps, s_aIds, &NewVal);
+	if(Prop != -1)
+		pEditor->m_Map.m_Modified = true;
+
+	if(Prop == PROP_POS_X) pSource->m_Position.x = i2fx(NewVal);
+	if(Prop == PROP_POS_Y) pSource->m_Position.y = i2fx(NewVal);
+	if(Prop == PROP_FALLOFF) pSource->m_FalloffDist = NewVal;
 
 	return 0;
 }
