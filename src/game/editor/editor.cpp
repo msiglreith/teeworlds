@@ -1782,6 +1782,134 @@ void CEditor::DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int PIndex)
 	Graphics()->QuadsDraw(&QuadItem, 1);
 }
 
+void CEditor::DoAudioSource(CAudioSource *pSource, int Index)
+{
+	enum
+	{
+		OP_NONE=0,
+		OP_MOVE,
+		OP_CONTEXT_MENU,
+	};
+
+	// some basic values
+	void *pID = &pSource->m_Position;
+	static float s_LastWx;
+	static float s_LastWy;
+	static int s_Operation = OP_NONE;
+
+	float wx = UI()->MouseWorldX();
+	float wy = UI()->MouseWorldY();
+
+	float CenterX = fx2f(pSource->m_Position.x);
+	float CenterY = fx2f(pSource->m_Position.y);
+
+	float dx = (CenterX - wx)/m_WorldZoom;
+	float dy = (CenterY - wy)/m_WorldZoom;
+	if(dx*dx+dy*dy < 50)
+		UI()->SetHotItem(pID);
+
+	bool IgnoreGrid;
+	if(Input()->KeyPressed(KEY_LALT) || Input()->KeyPressed(KEY_RALT))
+		IgnoreGrid = true;
+	else
+		IgnoreGrid = false;
+
+	// draw selection background
+	if(m_SelectedQuad == Index)
+	{
+		Graphics()->SetColor(0,0,0,1);
+		IGraphics::CQuadItem QuadItem(CenterX, CenterY, 7.0f*m_WorldZoom, 7.0f*m_WorldZoom);
+		Graphics()->QuadsDraw(&QuadItem, 1);
+	}
+
+	vec4 PivotColor;
+
+	if(UI()->ActiveItem() == pID)
+	{
+		if(m_MouseDeltaWx*m_MouseDeltaWx+m_MouseDeltaWy*m_MouseDeltaWy > 0.5f && s_Operation == OP_MOVE)
+		{
+			if(m_GridActive && !IgnoreGrid)
+			{
+				int LineDistance = GetLineDistance();
+
+				float x = 0.0f;
+				float y = 0.0f;
+				if(wx >= 0)
+					x = (int)((wx+(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+				else
+					x = (int)((wx-(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+				if(wy >= 0)
+					y = (int)((wy+(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+				else
+					y = (int)((wy-(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+
+				pSource->m_Position.x = f2fx(x);
+				pSource->m_Position.y = f2fx(y);
+			}
+			else
+			{
+				pSource->m_Position.x += f2fx(wx-s_LastWx);
+				pSource->m_Position.y += f2fx(wy-s_LastWy);
+			}
+		}
+
+		s_LastWx = wx;
+		s_LastWy = wy;
+
+		if(s_Operation == OP_CONTEXT_MENU)
+		{
+			if(!UI()->MouseButton(1))
+			{
+				static int s_SourcePopupID = 0;
+				UiInvokePopupMenu(&s_SourcePopupID, 0, UI()->MouseX(), UI()->MouseY(), 120, 180, PopupAudioSource);
+				m_LockMouse = false;
+				s_Operation = OP_NONE;
+				UI()->SetActiveItem(0);
+			}
+		}
+		else
+		{
+			if(!UI()->MouseButton(0))
+			{
+				m_LockMouse = false;
+				s_Operation = OP_NONE;
+				UI()->SetActiveItem(0);
+			}
+		}
+
+		PivotColor = HexToRgba(g_Config.m_EdColorQuadPivotActive);
+	}
+	else if(UI()->HotItem() == pID)
+	{
+		ms_pUiGotContext = pID;
+
+		PivotColor = HexToRgba(g_Config.m_EdColorQuadPivotHover);
+		m_pTooltip = "Left mouse button to move. Hold alt to ignore grid.";
+
+		if(UI()->MouseButton(0))
+		{
+			UI()->SetActiveItem(pID);
+			s_Operation = OP_MOVE;
+			m_SelectedSource = Index;
+			s_LastWx = wx;
+			s_LastWy = wy;
+		}
+
+		if(UI()->MouseButton(1))
+		{
+			m_SelectedSource = Index;
+			s_Operation = OP_CONTEXT_MENU;
+			UI()->SetActiveItem(pID);
+		}
+	}
+	else
+		PivotColor = HexToRgba(g_Config.m_EdColorQuadPivot);
+
+	Graphics()->SetColor(PivotColor.r, PivotColor.g, PivotColor.b, PivotColor.a);
+	IGraphics::CQuadItem QuadItem(CenterX, CenterY, 5.0f*m_WorldZoom, 5.0f*m_WorldZoom);
+	Graphics()->QuadsDraw(&QuadItem, 1);
+}
+
 void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 {
 	// render all good stuff
@@ -2145,6 +2273,16 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 
 							DoQuad(&pLayer->m_lQuads[i], i);
 						}
+						Graphics()->QuadsEnd();
+					}
+					else if(pEditLayers[k]->m_Type == LAYERTYPE_SOUNDS)
+					{
+						CLayerSounds *pLayer = (CLayerSounds *)pEditLayers[k];
+
+						Graphics()->TextureClear();
+						Graphics()->QuadsBegin();
+						for(int i = 0; i < pLayer->m_lSources.size(); i++)
+							DoAudioSource(&pLayer->m_lSources[i], i);
 						Graphics()->QuadsEnd();
 					}
 				}
@@ -4288,6 +4426,7 @@ void CEditor::Reset(bool CreateDefault)
 	m_SelectedPoints = 0;
 	m_SelectedEnvelope = 0;
 	m_SelectedImage = 0;
+	m_SelectedSource = -1;
 
 	m_WorldOffsetX = 0;
 	m_WorldOffsetY = 0;

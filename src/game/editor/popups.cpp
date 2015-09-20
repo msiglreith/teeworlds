@@ -1044,3 +1044,10 @@ bool CEditor::PopupAutoMapProceedOrder()
 
 	return false;
 }
+
+int CEditor::PopupAudioSource(CEditor *pEditor, CUIRect View)
+{
+	// TODO:
+
+	return 0;
+}

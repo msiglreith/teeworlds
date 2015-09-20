@@ -39,7 +39,7 @@ CAudioSource *CLayerSounds::NewSource()
 	pSource->m_Position.x = i2fx(0);
 	pSource->m_Position.y = i2fx(0);
 
-	pSource->m_FalloffDist = 1600;
+	pSource->m_FalloffDist = 1000;
 
 	return pSource;
 }

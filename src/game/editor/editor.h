@@ -620,6 +620,7 @@ public:
 	CLayer *GetSelectedLayerType(int Index, int Type);
 	CLayer *GetSelectedLayer(int Index);
 	CLayerGroup *GetSelectedGroup();
+	CAudioSource *GetSelectedAudioSource();
 
 	int DoProperties(CUIRect *pToolbox, CProperty *pProps, int *pIDs, int *pNewVal);
 
@@ -729,6 +730,7 @@ public:
 	int m_SelectedEnvelopePoint;
     int m_SelectedQuadEnvelope;
 	int m_SelectedImage;
+	int m_SelectedSource;
 
 	IGraphics::CTextureHandle m_CheckerTexture;
 	IGraphics::CTextureHandle m_BackgroundTexture;
@@ -782,6 +784,7 @@ public:
 	static int PopupImage(CEditor *pEditor, CUIRect View);
 	static int PopupMenuFile(CEditor *pEditor, CUIRect View);
 	static int PopupSelectConfigAutoMap(CEditor *pEditor, CUIRect View);
+	static int PopupAudioSource(CEditor *pEditor, CUIRect View);
 
 	static int PopupSelectDoodadRuleSet(CEditor *pEditor, CUIRect View);
 	static int PopupDoodadAutoMap(CEditor *pEditor, CUIRect View);
@@ -804,6 +807,8 @@ public:
 	void DoQuadEnvelopes(const array<CQuad> &m_lQuads, IGraphics::CTextureHandle Texture);
 	void DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int pIndex);
 	void DoQuadPoint(CQuad *pQuad, int QuadIndex, int v);
+
+	void DoAudioSource(CAudioSource *pSource, int Index);
 
 	void DoMapEditor(CUIRect View, CUIRect Toolbar);
 	void DoToolbar(CUIRect Toolbar);
