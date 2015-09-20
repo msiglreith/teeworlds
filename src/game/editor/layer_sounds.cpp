@@ -19,7 +19,13 @@ void CLayerSounds::Render()
 	Graphics()->BlendNormal();
 	Graphics()->QuadsBegin();
 
-	// TODO:
+	// render falloff distance circle
+	Graphics()->SetColor(0.5f, 0.75f, 1.0f, 0.4f);
+	for(int i = 0; i < m_lSources.size(); i++)
+	{
+		CAudioSource *pSource = &m_lSources[i];
+		m_pEditor->RenderTools()->DrawCircle(fx2f(pSource->m_Position.x), fx2f(pSource->m_Position.y), pSource->m_FalloffDist, 32);
+	}
 
 	Graphics()->QuadsEnd();
 }
