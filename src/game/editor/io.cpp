@@ -89,6 +89,18 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 		df.AddItem(MAPITEMTYPE_IMAGE, i, sizeof(Item), &Item);
 	}
 
+	// save audio samples
+	for(int i = 0; i < m_lSamples.size(); i++)
+	{
+		CEditorSample *pSample = m_lSamples[i];
+
+		CMapItemSample Item;
+		Item.m_Version = CMapItemSample::CURRENT_VERSION;
+		Item.m_ImageName = df.AddData(str_length(pSample->m_aName)+1, pSample->m_aName);
+
+		df.AddItem(MAPITEMTYPE_SAMPLE, i, sizeof(Item), &Item);
+	}
+
 	// save layers
 	int LayerCount = 0, GroupCount = 0;
 	for(int g = 0; g < m_lGroups.size(); g++)
@@ -346,6 +358,11 @@ int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int Storag
 				DataFile.UnloadData(pItem->m_ImageData);
 				DataFile.UnloadData(pItem->m_ImageName);
 			}
+		}
+
+		// load samples
+		{
+			// TODO:
 		}
 
 		// load groups

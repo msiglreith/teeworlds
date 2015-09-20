@@ -183,6 +183,7 @@ public:
 
 	virtual void ModifyImageIndex(INDEX_MODIFY_FUNC pfnFunc) {}
 	virtual void ModifyEnvelopeIndex(INDEX_MODIFY_FUNC pfnFunc) {}
+	virtual void ModifySampleIndex(INDEX_MODIFY_FUNC pfnFunc) {}
 
 	virtual void GetSize(float *w, float *h) { *w = 0; *h = 0;}
 
@@ -255,6 +256,12 @@ public:
 	{
 		for(int i = 0; i < m_lLayers.size(); i++)
 			m_lLayers[i]->ModifyEnvelopeIndex(Func);
+	}
+
+	void ModifySampleIndex(INDEX_MODIFY_FUNC Func)
+	{
+		for(int i = 0; i < m_lLayers.size(); i++)
+			m_lLayers[i]->ModifySampleIndex(Func);
 	}
 };
 
@@ -392,6 +399,13 @@ public:
 			m_lGroups[i]->ModifyEnvelopeIndex(pfnFunc);
 	}
 
+	void ModifySampleIndex(INDEX_MODIFY_FUNC pfnFunc)
+	{
+		m_Modified = true;
+		for(int i = 0; i < m_lGroups.size(); i++)
+			m_lGroups[i]->ModifySampleIndex(pfnFunc);
+	}
+
 	void Clean();
 	void CreateDefault();
 
@@ -420,6 +434,7 @@ enum
 	PROPTYPE_IMAGE,
 	PROPTYPE_ENVELOPE,
 	PROPTYPE_SHIFT,
+	PROPTYPE_SAMPLE,
 };
 
 typedef struct
@@ -523,6 +538,8 @@ public:
 	CAudioSource *NewSource();
 
 	virtual int RenderProperties(CUIRect *pToolbox);
+
+	void ModifySampleIndex(INDEX_MODIFY_FUNC pfnFunc);
 
 	int m_Sample;
 	array<CAudioSource> m_lSources;
@@ -805,6 +822,7 @@ public:
 	static int PopupSelectConfigAutoMap(CEditor *pEditor, CUIRect View);
 	static int PopupAudioSource(CEditor *pEditor, CUIRect View);
 	static int PopupAudioSample(CEditor *pEditor, CUIRect View);
+	static int PopupSelectSample(CEditor *pEditor, CUIRect View);
 
 	static int PopupSelectDoodadRuleSet(CEditor *pEditor, CUIRect View);
 	static int PopupDoodadAutoMap(CEditor *pEditor, CUIRect View);
@@ -815,6 +833,9 @@ public:
 
 	void PopupSelectImageInvoke(int Current, float x, float y);
 	int PopupSelectImageResult();
+
+	void PopupSelectSampleInvoke(int Current, float x, float y);
+	int PopupSelectSampleResult();
 
 	void PopupSelectGametileOpInvoke(float x, float y);
 	int PopupSelectGameTileOpResult();

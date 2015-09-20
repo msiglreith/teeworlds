@@ -1873,7 +1873,7 @@ void CEditor::DoAudioSource(CAudioSource *pSource, int Index)
 			if(!UI()->MouseButton(1))
 			{
 				static int s_SourcePopupID = 0;
-				UiInvokePopupMenu(&s_SourcePopupID, 0, UI()->MouseX(), UI()->MouseY(), 120, 180, PopupAudioSource);
+				UiInvokePopupMenu(&s_SourcePopupID, 0, UI()->MouseX(), UI()->MouseY(), 120, 100, PopupAudioSource);
 				m_LockMouse = false;
 				s_Operation = OP_NONE;
 				UI()->SetActiveItem(0);
@@ -2598,6 +2598,24 @@ int CEditor::DoProperties(CUIRect *pToolBox, CProperty *pProps, int *pIDs, int *
 				Change = i;
 			}
 		}
+		else if(pProps[i].m_Type == PROPTYPE_SAMPLE)
+		{
+			char aBuf[64];
+			if(pProps[i].m_Value < 0)
+				str_copy(aBuf, "None", sizeof(aBuf));
+			else
+				str_format(aBuf, sizeof(aBuf),"%s", m_Map.m_lSamples[pProps[i].m_Value]->m_aName);
+
+			if(DoButton_Editor(&pIDs[i], aBuf, 0, &Shifter, 0, 0))
+				PopupSelectSampleInvoke(pProps[i].m_Value, UI()->MouseX(), UI()->MouseY());
+
+			int r = PopupSelectSampleResult();
+			if(r >= -1)
+			{
+				*pNewVal = r;
+				Change = i;
+			}
+		}
 	}
 
 	return Change;
@@ -2843,11 +2861,32 @@ void CEditor::AddImage(const char *pFileName, int StorageType, void *pUser)
 	pEditor->m_Dialog = DIALOG_NONE;
 }
 
-void CEditor::AddSample(const char *pFilename, int StorageType, void *pUser)
+void CEditor::AddSample(const char *pFileName, int StorageType, void *pUser)
 {
 	CEditor *pEditor = (CEditor *)pUser;
 
-	// TODO:
+	// check if we have that sample already
+	char aBuf[128];
+	ExtractName(pFileName, aBuf, sizeof(aBuf));
+	for(int i = 0; i < pEditor->m_Map.m_lSamples.size(); ++i)
+	{
+		if(!str_comp(pEditor->m_Map.m_lSamples[i]->m_aName, aBuf))
+			return;
+	}
+
+	CEditorSample *pSample = new CEditorSample(pEditor);
+	str_copy(pSample->m_aName, aBuf, sizeof(pSample->m_aName));
+
+	pEditor->m_Map.m_lSamples.add(pSample);
+	if(pEditor->m_SelectedSample > -1 && pEditor->m_SelectedSample < pEditor->m_Map.m_lSamples.size())
+	{
+		for(int i = 0; i <= pEditor->m_SelectedSample; ++i)
+			if(!str_comp(pEditor->m_Map.m_lSamples[i]->m_aName, aBuf))
+			{
+				pEditor->m_SelectedSample++;
+				break;
+			}
+	}
 
 	pEditor->m_Dialog = DIALOG_NONE;
 }
@@ -2913,6 +2952,33 @@ int CEditor::PopupImage(CEditor *pEditor, CUIRect View)
 
 int CEditor::PopupAudioSample(CEditor *pEditor, CUIRect View)
 {
+	
+	static int s_ReplaceButton = 0;
+	static int s_RemoveButton = 0;
+
+	CUIRect Slot;
+	View.HSplitTop(2.0f, &Slot, &View);
+	View.HSplitTop(12.0f, &Slot, &View);
+	CEditorSample *pSample = pEditor->m_Map.m_lSamples[pEditor->m_SelectedSample];
+
+	if(pEditor->DoButton_MenuItem(&s_ReplaceButton, "Replace", 0, &Slot, 0, "Replaces the sample with a new one"))
+	{
+		// TODO:
+		// pEditor->InvokeFileDialog(IStorage::TYPE_ALL, FILETYPE_SAMPLE, "Replace Sample", "Replace", "mapres", "", ReplaceSample, pEditor);
+		return 1;
+	}
+
+	View.HSplitTop(10.0f, &Slot, &View);
+	View.HSplitTop(12.0f, &Slot, &View);
+	if(pEditor->DoButton_MenuItem(&s_RemoveButton, "Remove", 0, &Slot, 0, "Removes the samples from the map"))
+	{
+		delete pSample;
+		pEditor->m_Map.m_lSamples.remove_index(pEditor->m_SelectedSample);
+		gs_ModifyIndexDeletedIndex = pEditor->m_SelectedSample;
+		pEditor->m_Map.ModifySampleIndex(ModifyIndexDeleted);
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -3192,7 +3258,7 @@ void CEditor::RenderSamples(CUIRect ToolBox, CUIRect Toolbar, CUIRect View)
 
 				static int s_PopupSampleID = 0;
 				if(Result == 2)
-					UiInvokePopupMenu(&s_PopupSampleID, 0, UI()->MouseX(), UI()->MouseY(), 120, 80, PopupAudioSample);
+					UiInvokePopupMenu(&s_PopupSampleID, 0, UI()->MouseX(), UI()->MouseY(), 120, 60, PopupAudioSample);
 			}
 
 			ToolBox.HSplitTop(2.0f, 0, &ToolBox);
@@ -3226,10 +3292,11 @@ static int EditorListdirCallback(const char *pName, int IsDir, int StorageType, 
 	CEditor *pEditor = (CEditor*)pUser;
 	int Length = str_length(pName);
 	if((pName[0] == '.' && (pName[1] == 0 ||
-		(pName[1] == '.' && pName[2] == 0 && (!str_comp(pEditor->m_pFileDialogPath, "maps") || !str_comp(pEditor->m_pFileDialogPath, "mapres"))))) ||
+		(pName[1] == '.' && pName[2] == 0 &&
+		(!str_comp(pEditor->m_pFileDialogPath, "maps") || !str_comp(pEditor->m_pFileDialogPath, "mapres"))))) ||
 		(!IsDir && ((pEditor->m_FileDialogFileType == CEditor::FILETYPE_MAP && (Length < 4 || str_comp(pName+Length-4, ".map"))) ||
 		(pEditor->m_FileDialogFileType == CEditor::FILETYPE_IMG && (Length < 4 || str_comp(pName+Length-4, ".png"))) ||
-		(pEditor->m_FileDialogFileType == CEditor::FILETYPE_SAMPLE && (Length < 3 || str_comp(pName+Length-4, ".wv"))))))
+		(pEditor->m_FileDialogFileType == CEditor::FILETYPE_SAMPLE && (Length < 3 || str_comp(pName+Length-3, ".wv"))))))
 		return 0;
 
 	CEditor::CFilelistItem Item;
@@ -4691,6 +4758,7 @@ void CEditorMap::Clean()
 	m_lGroups.delete_all();
 	m_lEnvelopes.delete_all();
 	m_lImages.delete_all();
+	m_lSamples.delete_all();
 
 	m_MapInfo.Reset();
 

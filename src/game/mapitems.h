@@ -19,7 +19,7 @@ enum
 	MAPITEMTYPE_GROUP,
 	MAPITEMTYPE_LAYER,
 	MAPITEMTYPE_ENVPOINTS,
-	MAPITEMTYPE_SOUND,
+	MAPITEMTYPE_SAMPLE,
 
 	CURVETYPE_STEP=0,
 	CURVETYPE_LINEAR,
@@ -254,6 +254,14 @@ struct CMapItemEnvelope : public CMapItemEnvelope_v2
 {
 	// bezier curve support
 	enum { CURRENT_VERSION=3 };
+};
+
+struct CMapItemSample
+{
+	enum { CURRENT_VERSION=1 };
+
+	int m_Version;
+	int m_ImageName;
 };
 
 #endif

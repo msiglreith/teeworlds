@@ -6,6 +6,7 @@ CLayerSounds::CLayerSounds()
 {
 	m_Type = LAYERTYPE_SOUNDS;
 	str_copy(m_aName, "Sounds", sizeof(m_aName));
+	m_Sample = -1;
 }
 
 CLayerSounds::~CLayerSounds()
@@ -44,7 +45,38 @@ CAudioSource *CLayerSounds::NewSource()
 	return pSource;
 }
 
-int CLayerSounds::RenderProperties(CUIRect *pToolbox)
+int CLayerSounds::RenderProperties(CUIRect *pToolBox)
 {
+	// layer props
+	enum
+	{
+		PROP_SAMPLE=0,
+		NUM_PROPS,
+	};
+
+	CProperty aProps[] = {
+		{"Sample", m_Sample, PROPTYPE_SAMPLE, -1, 0},
+		{0},
+	};
+
+	static int s_aIds[NUM_PROPS] = {0};
+	int NewVal = 0;
+	int Prop = m_pEditor->DoProperties(pToolBox, aProps, s_aIds, &NewVal);
+	if(Prop != -1)
+		m_pEditor->m_Map.m_Modified = true;
+
+	if(Prop == PROP_SAMPLE)
+	{
+		if(NewVal >= 0)
+			m_Sample = NewVal%m_pEditor->m_Map.m_lSamples.size();
+		else
+			m_Sample = -1;
+	}
+
 	return 0;
+}
+
+void CLayerSounds::ModifySampleIndex(INDEX_MODIFY_FUNC Func)
+{
+	Func(&m_Sample);
 }

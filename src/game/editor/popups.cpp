@@ -902,6 +902,54 @@ int CEditor::PopupSelectImageResult()
 	return g_SelectImageCurrent;
 }
 
+static int g_SelectSampleSelected = -100;
+static int g_SelectSampleCurrent = -100;
+
+int CEditor::PopupSelectSample(CEditor *pEditor, CUIRect View)
+{
+	CUIRect ButtonBar, SampleView;
+	View.VSplitLeft(80.0f, &ButtonBar, &View);
+	View.Margin(10.0f, &SampleView);
+
+	for(int i = -1; i < pEditor->m_Map.m_lSamples.size(); i++)
+	{
+		CUIRect Button;
+		ButtonBar.HSplitTop(12.0f, &Button, &ButtonBar);
+		ButtonBar.HSplitTop(2.0f, 0, &ButtonBar);
+
+		if(i == -1)
+		{
+			if(pEditor->DoButton_MenuItem(&pEditor->m_Map.m_lSamples[i], "None", i==g_SelectSampleCurrent, &Button))
+				g_SelectSampleSelected = -1;
+		}
+		else
+		{
+			if(pEditor->DoButton_MenuItem(&pEditor->m_Map.m_lSamples[i], pEditor->m_Map.m_lSamples[i]->m_aName, i==g_SelectSampleCurrent, &Button))
+				g_SelectSampleSelected = i;
+		}
+	}
+
+	return 0;
+}
+
+void CEditor::PopupSelectSampleInvoke(int Current, float x, float y)
+{
+	static int s_SelectSamplePopupId = 0;
+	g_SelectSampleSelected = -100;
+	g_SelectSampleCurrent = Current;
+	UiInvokePopupMenu(&s_SelectSamplePopupId, 0, x, y, 400, 300, PopupSelectSample);
+}
+
+int CEditor::PopupSelectSampleResult()
+{
+	if(g_SelectSampleSelected == -100)
+		return -100;
+
+	g_SelectSampleCurrent = g_SelectSampleSelected;
+	g_SelectSampleSelected = -100;
+	return g_SelectSampleCurrent;
+}
+
 static int s_GametileOpSelected = -1;
 
 int CEditor::PopupSelectGametileOp(CEditor *pEditor, CUIRect View)
