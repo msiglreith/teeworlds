@@ -547,7 +547,7 @@ int CEditor::DoButton_Editor(const void *pID, const char *pText, int Checked, co
 	return DoButton_Editor_Common(pID, pText, Checked, pRect, Flags, pToolTip);
 }
 
-int CEditor::DoButton_Image(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, bool Used)
+int CEditor::DoButton_Asset(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, bool Used)
 {
 	// darken the button if not used
 	vec4 ButtonColor = GetButtonColor(pID, Checked);
@@ -2843,6 +2843,14 @@ void CEditor::AddImage(const char *pFileName, int StorageType, void *pUser)
 	pEditor->m_Dialog = DIALOG_NONE;
 }
 
+void CEditor::AddSample(const char *pFilename, int StorageType, void *pUser)
+{
+	CEditor *pEditor = (CEditor *)pUser;
+
+	// TODO:
+
+	pEditor->m_Dialog = DIALOG_NONE;
+}
 
 static int gs_ModifyIndexDeletedIndex;
 static void ModifyIndexDeleted(int *pIndex)
@@ -2900,6 +2908,11 @@ int CEditor::PopupImage(CEditor *pEditor, CUIRect View)
 		return 1;
 	}
 
+	return 0;
+}
+
+int CEditor::PopupAudioSample(CEditor *pEditor, CUIRect View)
+{
 	return 0;
 }
 
@@ -3043,7 +3056,7 @@ void CEditor::RenderImages(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 				}
 			}
 
-			if(int Result = DoButton_Image(&m_Map.m_lImages[i], aBuf, m_SelectedImage == i, &Slot,
+			if(int Result = DoButton_Asset(&m_Map.m_lImages[i], aBuf, m_SelectedImage == i, &Slot,
 				BUTTON_CONTEXT, "Select image", Used))
 			{
 				m_SelectedImage = i;
@@ -3101,6 +3114,112 @@ void CEditor::RenderImages(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 		InvokeFileDialog(IStorage::TYPE_ALL, FILETYPE_IMG, "Add Image", "Add", "mapres", "", AddImage, this);
 }
 
+void CEditor::RenderSamples(CUIRect ToolBox, CUIRect Toolbar, CUIRect View)
+{
+	static int s_ScrollBar = 0;
+	static float s_ScrollValue = 0;
+	float SamplesHeight = 30.0f + 14.0f * m_Map.m_lSamples.size() + 27.0f;
+	float ScrollDifference = SamplesHeight - ToolBox.h;
+
+	if(SamplesHeight > ToolBox.h)	// Do we even need a scrollbar?
+	{
+		CUIRect Scroll;
+		ToolBox.VSplitRight(15.0f, &ToolBox, &Scroll);
+		ToolBox.VSplitRight(3.0f, &ToolBox, 0);	// extra spacing
+		Scroll.HMargin(5.0f, &Scroll);
+		s_ScrollValue = UiDoScrollbarV(&s_ScrollBar, &Scroll, s_ScrollValue);
+
+		if(UI()->MouseInside(&Scroll) || UI()->MouseInside(&ToolBox))
+		{
+			int ScrollNum = (int)((SamplesHeight-ToolBox.h)/14.0f)+1;
+			if(ScrollNum > 0)
+			{
+				if(Input()->KeyPresses(KEY_MOUSE_WHEEL_UP))
+					s_ScrollValue = clamp(s_ScrollValue - 1.0f/ScrollNum, 0.0f, 1.0f);
+				if(Input()->KeyPresses(KEY_MOUSE_WHEEL_DOWN))
+					s_ScrollValue = clamp(s_ScrollValue + 1.0f/ScrollNum, 0.0f, 1.0f);
+			}
+		}
+	}
+
+	float SampleStartAt = ScrollDifference * s_ScrollValue;
+	if(SampleStartAt < 0.0f)
+		SampleStartAt = 0.0f;
+
+	float SampleStopAt = SamplesHeight - ScrollDifference * (1 - s_ScrollValue);
+	float SampleCur = 0.0f;
+
+	if(SampleCur <= SampleStopAt)
+	{
+		CUIRect Slot;
+		SampleCur += 15.0f;
+
+		for(int i = 0; i < m_Map.m_lSamples.size(); i++)
+		{
+			if(SampleCur > SampleStopAt)
+				break;
+			else if(SampleCur < SampleStartAt)
+			{
+				SampleCur += 14.0f;
+				continue;
+			}
+			SampleCur += 14.0f;
+
+			char aBuf[128];
+			str_copy(aBuf, m_Map.m_lSamples[i]->m_aName, sizeof(aBuf));
+			ToolBox.HSplitTop(12.0f, &Slot, &ToolBox);
+
+			// check if sample is used
+			bool Used = false;
+			for(int g = 0; !Used && (g < m_Map.m_lGroups.size()); g++)
+			{
+				CLayerGroup *pGroup = m_Map.m_lGroups[g];
+				for(int l = 0; !Used && (l < pGroup->m_lLayers.size()); l++)
+				{
+					if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_SOUNDS)
+					{
+						CLayerSounds *pLayer = static_cast<CLayerSounds *>(pGroup->m_lLayers[l]);
+						if(pLayer->m_Sample == i)
+							Used = true;
+					}
+				}
+			}
+
+			if(int Result = DoButton_Asset(&m_Map.m_lSamples[i], aBuf, m_SelectedSample == i, &Slot,
+				BUTTON_CONTEXT, "Select sample", Used))
+			{
+				m_SelectedSample = i;
+
+				static int s_PopupSampleID = 0;
+				if(Result == 2)
+					UiInvokePopupMenu(&s_PopupSampleID, 0, UI()->MouseX(), UI()->MouseY(), 120, 80, PopupAudioSample);
+			}
+
+			ToolBox.HSplitTop(2.0f, 0, &ToolBox);
+		}
+
+		// separator
+		ToolBox.HSplitTop(5.0f, &Slot, &ToolBox);
+		SampleCur += 5.0f;
+		IGraphics::CLineItem LineItem(Slot.x, Slot.y+Slot.h/2, Slot.x+Slot.w, Slot.y+Slot.h/2);
+		Graphics()->TextureClear();
+		Graphics()->LinesBegin();
+		Graphics()->LinesDraw(&LineItem, 1);
+		Graphics()->LinesEnd();
+	}
+
+	if(SampleCur + 27.0f > SampleStopAt)
+		return;
+
+	CUIRect Slot;
+	ToolBox.HSplitTop(5.0f, &Slot, &ToolBox);
+
+	// new audio sample
+	static int s_NewSampleButton = 0;
+	ToolBox.HSplitTop(12.0f, &Slot, &ToolBox);
+	if(DoButton_Editor(&s_NewSampleButton, "Add", 0, &Slot, 0, "Load a new audio sample to use in the map"))
+		InvokeFileDialog(IStorage::TYPE_ALL, FILETYPE_SAMPLE, "Add Sample", "Add", "mapres", "", AddSample, this);
+}
 
 static int EditorListdirCallback(const char *pName, int IsDir, int StorageType, void *pUser)
 {
@@ -3109,7 +3228,8 @@ static int EditorListdirCallback(const char *pName, int IsDir, int StorageType, 
 	if((pName[0] == '.' && (pName[1] == 0 ||
 		(pName[1] == '.' && pName[2] == 0 && (!str_comp(pEditor->m_pFileDialogPath, "maps") || !str_comp(pEditor->m_pFileDialogPath, "mapres"))))) ||
 		(!IsDir && ((pEditor->m_FileDialogFileType == CEditor::FILETYPE_MAP && (Length < 4 || str_comp(pName+Length-4, ".map"))) ||
-		(pEditor->m_FileDialogFileType == CEditor::FILETYPE_IMG && (Length < 4 || str_comp(pName+Length-4, ".png"))))))
+		(pEditor->m_FileDialogFileType == CEditor::FILETYPE_IMG && (Length < 4 || str_comp(pName+Length-4, ".png"))) ||
+		(pEditor->m_FileDialogFileType == CEditor::FILETYPE_SAMPLE && (Length < 3 || str_comp(pName+Length-4, ".wv"))))))
 		return 0;
 
 	CEditor::CFilelistItem Item;
@@ -3117,7 +3237,12 @@ static int EditorListdirCallback(const char *pName, int IsDir, int StorageType, 
 	if(IsDir)
 		str_format(Item.m_aName, sizeof(Item.m_aName), "%s/", pName);
 	else
-		str_copy(Item.m_aName, pName, min(static_cast<int>(sizeof(Item.m_aName)), Length-3));
+	{
+		if(pEditor->m_FileDialogFileType == CEditor::FILETYPE_SAMPLE)
+			str_copy(Item.m_aName, pName, min(static_cast<int>(sizeof(Item.m_aName)), Length-2));
+		else
+			str_copy(Item.m_aName, pName, min(static_cast<int>(sizeof(Item.m_aName)), Length-3));
+	}
 	Item.m_IsDir = IsDir != 0;
 	Item.m_IsLink = false;
 	Item.m_StorageType = StorageType;
@@ -3441,11 +3566,20 @@ void CEditor::RenderModebar(CUIRect View)
 		View.VSplitLeft(65.0f, &Button, &View);
 		Button.HSplitTop(30.0f, 0, &Button);
 		static int s_Button = 0;
-		const char *pButName = m_Mode == MODE_LAYERS ? "Layers" : "Images";
-		if(DoButton_Tab(&s_Button, pButName, 0, &Button, 0, "Switch between images and layers managment."))
+		const char *pButName = "";
+		if(m_Mode == MODE_LAYERS)
+			pButName = "Layers";
+		else if(m_Mode == MODE_IMAGES)
+			pButName = "Images";
+		else if(m_Mode == MODE_SAMPLES)
+			pButName = "Samples";
+
+		if(DoButton_Tab(&s_Button, pButName, 0, &Button, 0, "Switch between images, audio samples and layers management."))
 		{
 			if(m_Mode == MODE_LAYERS)
 				m_Mode = MODE_IMAGES;
+			else if(m_Mode == MODE_IMAGES)
+				m_Mode = MODE_SAMPLES;
 			else
 				m_Mode = MODE_LAYERS;
 		}
@@ -4356,6 +4490,8 @@ void CEditor::Render()
 		RenderLayers(ToolBox, ToolBar, View);
 	else if(m_Mode == MODE_IMAGES)
 		RenderImages(ToolBox, ToolBar, View);
+	else if(m_Mode == MODE_SAMPLES)
+		RenderSamples(ToolBox, ToolBar, View);
 
 	Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
 
@@ -4439,6 +4575,7 @@ void CEditor::Reset(bool CreateDefault)
 	m_SelectedEnvelope = 0;
 	m_SelectedImage = 0;
 	m_SelectedSource = -1;
+	m_SelectedSample = 0;
 
 	m_WorldOffsetX = 0;
 	m_WorldOffsetY = 0;

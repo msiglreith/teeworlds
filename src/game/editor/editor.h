@@ -34,6 +34,7 @@ enum
 {
 	MODE_LAYERS=0,
 	MODE_IMAGES,
+	MODE_SAMPLES,
 
 	DIALOG_NONE=0,
 	DIALOG_FILE,
@@ -286,6 +287,20 @@ public:
 	class IAutoMapper *m_pAutoMapper;
 };
 
+class CEditorSample
+{
+public:
+	CEditor *m_pEditor;
+
+	CEditorSample(CEditor *pEditor)
+	{
+		m_pEditor = pEditor;
+		m_aName[0] = 0;
+	}
+
+	char m_aName[128];
+};
+
 class CEditorMap
 {
 	void MakeGameGroup(CLayerGroup *pGroup);
@@ -302,6 +317,7 @@ public:
 	array<CLayerGroup*> m_lGroups;
 	array<CEditorImage*> m_lImages;
 	array<CEnvelope*> m_lEnvelopes;
+	array<CEditorSample*> m_lSamples;
 
 	class CMapInfo
 	{
@@ -508,6 +524,7 @@ public:
 
 	virtual int RenderProperties(CUIRect *pToolbox);
 
+	int m_Sample;
 	array<CAudioSource> m_lSources;
 };
 
@@ -652,6 +669,7 @@ public:
 	{
 		FILETYPE_MAP,
 		FILETYPE_IMG,
+		FILETYPE_SAMPLE,
 
 		MAX_PATH_LENGTH = 512
 	};
@@ -731,6 +749,7 @@ public:
     int m_SelectedQuadEnvelope;
 	int m_SelectedImage;
 	int m_SelectedSource;
+	int m_SelectedSample;
 
 	IGraphics::CTextureHandle m_CheckerTexture;
 	IGraphics::CTextureHandle m_BackgroundTexture;
@@ -756,7 +775,7 @@ public:
 	int DoButton_ButtonInc(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
 
 	int DoButton_File(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
-	int DoButton_Image(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, bool Used);
+	int DoButton_Asset(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, bool Used);
 
 	int DoButton_Menu(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
 	int DoButton_MenuItem(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags=0, const char *pToolTip=0);
@@ -785,6 +804,7 @@ public:
 	static int PopupMenuFile(CEditor *pEditor, CUIRect View);
 	static int PopupSelectConfigAutoMap(CEditor *pEditor, CUIRect View);
 	static int PopupAudioSource(CEditor *pEditor, CUIRect View);
+	static int PopupAudioSample(CEditor *pEditor, CUIRect View);
 
 	static int PopupSelectDoodadRuleSet(CEditor *pEditor, CUIRect View);
 	static int PopupDoodadAutoMap(CEditor *pEditor, CUIRect View);
@@ -819,8 +839,11 @@ public:
 	static void ReplaceImage(const char *pFilename, int StorageType, void *pUser);
 	static void AddImage(const char *pFilename, int StorageType, void *pUser);
 
+	static void AddSample(const char *pFilename, int StorageType, void *pUser);
+
 	void RenderImages(CUIRect Toolbox, CUIRect Toolbar, CUIRect View);
 	void RenderLayers(CUIRect Toolbox, CUIRect Toolbar, CUIRect View);
+	void RenderSamples(CUIRect Toolbox, CUIRect Toolbar, CUIRect View);
 	void RenderModebar(CUIRect View);
 	void RenderStatusbar(CUIRect View);
 	void RenderEnvelopeEditor(CUIRect View);
