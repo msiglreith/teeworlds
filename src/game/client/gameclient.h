@@ -278,6 +278,7 @@ public:
 	class CItems *m_pItems;
 	class CMapLayers *m_pMapLayersBackGround;
 	class CMapLayers *m_pMapLayersForeGround;
+	class CMapSamples *m_pMapSamples;
 };
 
 extern const char *Localize(const char *Str, const char *pContext="");

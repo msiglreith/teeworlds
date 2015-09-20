@@ -39,6 +39,7 @@
 #include "components/killmessages.h"
 #include "components/mapimages.h"
 #include "components/maplayers.h"
+#include "components/mapsamples.h"
 #include "components/menus.h"
 #include "components/motd.h"
 #include "components/particles.h"
@@ -78,6 +79,7 @@ static CPlayers gs_Players;
 static CNamePlates gs_NamePlates;
 static CItems gs_Items;
 static CMapImages gs_MapImages;
+static CMapSamples gs_MapSamples;
 
 static CMapLayers gs_MapLayersBackGround(CMapLayers::TYPE_BACKGROUND);
 static CMapLayers gs_MapLayersForeGround(CMapLayers::TYPE_FOREGROUND);
@@ -175,11 +177,13 @@ void CGameClient::OnConsoleInit()
 	m_pItems = &::gs_Items;
 	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
 	m_pMapLayersForeGround = &::gs_MapLayersForeGround;
+	m_pMapSamples = &::gs_MapSamples;
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
 	m_All.Add(m_pCountryFlags);
 	m_All.Add(m_pMapimages);
+	m_All.Add(m_pMapSamples);
 	m_All.Add(m_pEffects); // doesn't render anything, just updates effects
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 	m_All.Add(m_pBinds);
