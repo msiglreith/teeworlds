@@ -6,6 +6,7 @@
 #include <generated/client_data.h>
 #include <game/client/gameclient.h>
 #include <game/client/components/camera.h>
+#include <game/client/components/mapsamples.h>
 #include <game/client/components/menus.h>
 #include "sounds.h"
 
@@ -65,10 +66,12 @@ void CSounds::OnInit()
 	Sound()->SetChannelVolume(CSounds::CHN_MUSIC, 1.0f);
 	Sound()->SetChannelVolume(CSounds::CHN_WORLD, 0.9f);
 	Sound()->SetChannelVolume(CSounds::CHN_GLOBAL, 1.0f);
+	Sound()->SetChannelVolume(CSounds::CHN_AMBIENT, 1.0f);
 
 	Sound()->SetListenerPos(0.0f, 0.0f);
 
 	ClearQueue();
+	m_EnqueueMapSounds = true;
 
 	// load sounds
 	if(g_Config.m_ClThreadsoundloading)
@@ -91,6 +94,7 @@ void CSounds::OnReset()
 {
 	if(Client()->State() >= IClient::STATE_ONLINE)
 	{
+		m_EnqueueMapSounds = true;
 		Sound()->StopAll();
 		ClearQueue();
 	}
@@ -128,6 +132,47 @@ void CSounds::OnRender()
 				mem_move(m_aQueue, m_aQueue+1, m_QueuePos*sizeof(QueueEntry));
 		}
 	}
+
+	// play map sounds
+	// enqueue audio sources
+	if(m_EnqueueMapSounds)
+	{
+		for(int g = 0; g < Layers()->NumGroups(); g++)
+		{
+			CMapItemGroup *pGroup = Layers()->GetGroup(g);
+
+			if(!pGroup)
+				continue;
+
+			for(int l = 0; l < pGroup->m_NumLayers; l++)
+			{
+				CMapItemLayer *pLayer = Layers()->GetLayer(pGroup->m_StartLayer+l);
+
+				if(!pLayer)
+					continue;
+
+				if(pLayer->m_Type != LAYERTYPE_SOUNDS)
+					continue;
+
+				CMapItemLayerSounds *pSoundLayer = (CMapItemLayerSounds *)pLayer;
+
+				if(pSoundLayer->m_Sample < 0 || pSoundLayer->m_Sample >= m_pClient->m_pMapSamples->Num())
+					continue;
+
+				CAudioSource *pSources = (CAudioSource *)Layers()->Map()->GetDataSwapped(pSoundLayer->m_Data);
+
+				if(!pSources)
+					continue;
+
+				for(int i = 0; i < pSoundLayer->m_NumSources; i++)
+				{
+					PlaySampleAt(CSounds::CHN_AMBIENT, m_pClient->m_pMapSamples->Get(pSoundLayer->m_Sample), 1.0f, vec2(fx2f(pSources[i].m_Position.x), fx2f(pSources[i].m_Position.y)));
+				}
+			}
+		}
+
+		m_EnqueueMapSounds = false;
+	}
 }
 
 void CSounds::ClearQueue()
@@ -160,7 +205,7 @@ void CSounds::Play(int Chn, int SetId, float Vol)
 		return;
 
 	int Flags = 0;
-	if(Chn == CHN_MUSIC)
+	if(Chn == CHN_MUSIC || Chn == CHN_AMBIENT)
 		Flags = ISound::FLAG_LOOP;
 
 	Sound()->Play(Chn, SampleId, Flags);
@@ -168,18 +213,22 @@ void CSounds::Play(int Chn, int SetId, float Vol)
 
 void CSounds::PlayAt(int Chn, int SetId, float Vol, vec2 Pos)
 {
+	PlaySampleAt(Chn, GetSampleId(SetId), Vol, Pos);
+}
+
+void CSounds::PlaySampleAt(int Chn, ISound::CSampleHandle Sample, float Vol, vec2 Pos)
+{
 	if(Chn == CHN_MUSIC && !g_Config.m_SndMusic)
 		return;
-	
-	ISound::CSampleHandle SampleId = GetSampleId(SetId);
-	if(!SampleId.IsValid())
+
+	if(!Sample.IsValid())
 		return;
 
 	int Flags = 0;
-	if(Chn == CHN_MUSIC)
+	if(Chn == CHN_MUSIC || Chn == CHN_AMBIENT)
 		Flags = ISound::FLAG_LOOP;
 
-	Sound()->PlayAt(Chn, SampleId, Flags, Pos.x, Pos.y);
+	Sound()->PlayAt(Chn, Sample, Flags, Pos.x, Pos.y);
 }
 
 void CSounds::Stop(int SetId)

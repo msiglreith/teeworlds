@@ -434,6 +434,16 @@ ISound::CSampleHandle CSound::LoadWV(const char *pFilename)
 	return CreateSampleHandle(SampleID);
 }
 
+void CSound::UnloadSample(CSampleHandle Sound)
+{
+	if(!Sound.IsValid())
+		return;
+
+	Stop(Sound);
+	mem_free(m_aSamples[Sound.Id()].m_pData);
+	m_aSamples[Sound.Id()].m_pData = 0x0;
+}
+
 void CSound::SetListenerPos(float x, float y)
 {
 	m_CenterX = (int)x;

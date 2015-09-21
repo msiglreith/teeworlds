@@ -4,6 +4,7 @@
 #define GAME_CLIENT_COMPONENTS_SOUNDS_H
 
 #include <engine/sound.h>
+#include <engine/shared/jobs.h>
 #include <game/client/component.h>
 
 class CSounds : public CComponent
@@ -19,8 +20,9 @@ class CSounds : public CComponent
 	} m_aQueue[QUEUE_SIZE];
 	int m_QueuePos;
 	int64 m_QueueWaitTime;
-	class CJob m_SoundJob;
+	CJob m_SoundJob;
 	bool m_WaitForSoundJob;
+	bool m_EnqueueMapSounds;
 	
 	ISound::CSampleHandle GetSampleId(int SetId);
 
@@ -32,6 +34,7 @@ public:
 		CHN_MUSIC,
 		CHN_WORLD,
 		CHN_GLOBAL,
+		CHN_AMBIENT,
 	};
 
 	virtual void OnInit();
@@ -43,6 +46,7 @@ public:
 	void Enqueue(int Channel, int SetId);
 	void Play(int Channel, int SetId, float Vol);
 	void PlayAt(int Channel, int SetId, float Vol, vec2 Pos);
+	void PlaySampleAt(int Channel, ISound::CSampleHandle Sample, float Vol, vec2 Pos);
 	void Stop(int SetId);
 	bool IsPlaying(int SetId);
 };

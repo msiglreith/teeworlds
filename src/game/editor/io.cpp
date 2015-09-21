@@ -96,7 +96,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 
 		CMapItemSample Item;
 		Item.m_Version = CMapItemSample::CURRENT_VERSION;
-		Item.m_ImageName = df.AddData(str_length(pSample->m_aName)+1, pSample->m_aName);
+		Item.m_SampleName = df.AddData(str_length(pSample->m_aName)+1, pSample->m_aName);
 
 		df.AddItem(MAPITEMTYPE_SAMPLE, i, sizeof(Item), &Item);
 	}
@@ -201,6 +201,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 					// add the data
 					Item.m_NumSources = pLayer->m_lSources.size();
 					Item.m_Data = df.AddDataSwapped(pLayer->m_lSources.size()*sizeof(CAudioSource), pLayer->m_lSources.base_ptr());
+					Item.m_Sample = pLayer->m_Sample;
 
 					// save layer name
 					StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pLayer->m_aName);

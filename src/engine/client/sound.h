@@ -28,6 +28,7 @@ public:
 	virtual bool IsSoundEnabled() { return m_SoundEnabled != 0; }
 
 	virtual CSampleHandle LoadWV(const char *pFilename);
+	virtual void UnloadSample(CSampleHandle Sound);
 
 	virtual void SetListenerPos(float x, float y);
 	virtual void SetChannelVolume(int ChannelID, float Vol);

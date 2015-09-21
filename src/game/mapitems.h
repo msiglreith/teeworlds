@@ -261,7 +261,7 @@ struct CMapItemSample
 	enum { CURRENT_VERSION=1 };
 
 	int m_Version;
-	int m_ImageName;
+	int m_SampleName;
 };
 
 #endif
